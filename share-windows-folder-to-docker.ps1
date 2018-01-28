@@ -1,5 +1,6 @@
 ﻿# 自动共享 Windows 的文件夹到 Docker 主机
 ## git clone https://github.com/huzhenghui/share-windows-folder-to-docker
+## share-windows-folder-to-docker/share-windows-folder-to-docker.ps1
 ## Docker for Windows 使用 Hyper-V，而 Hyper-V 自身并没有包含设备驱动方式的文件共享，因此只能使用 Windows 自带的 SMB 文件共享，SMB 也称 CIFS
 ## Docker for Windows 的客户端可以使用图形界面设置文件共享，不过技术实现方式也是 SMB，而且自动创建的文件共享对于局域网是开放的，未免有安全隐患
 # 本脚本用于使用 Docker-Machine 命令可以访问到的 Docker 主机
