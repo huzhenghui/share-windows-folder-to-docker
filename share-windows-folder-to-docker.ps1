@@ -39,9 +39,21 @@ if ([string]::IsNullOrEmpty($workingDir))
 {
     $workingDir = (Get-Location).Path
 }
-elseif (-Not ([io.Directory]::Exists($workingDir)))
+else
 {
-    $workingDir = (Get-Location).Path
+    $workingDir = (Resolve-Path $workingDir).Path
+    if ([string]::IsNullOrEmpty($workingDir))
+    {
+        $workingDir = (Get-Location).Path
+    }
+    elseif (-Not ([io.Directory]::Exists($workingDir)))
+    {
+        $workingDir = (Get-Location).Path
+    }
+    if([string]::IsNullOrEmpty([System.IO.Path]::GetFileName($workingDir)))
+    {
+        $workingDir = [System.IO.Path]::GetDirectoryName($workingDir)
+    }
 }
 echo "Working Directory : " $workingDir
 ### 获取路径的最后一段，也就是文件夹名，由于后面会多次使用该文件夹名，避免出现字符集问题建议使用纯英文，或者手工设置
@@ -115,6 +127,7 @@ if([string]::IsNullOrEmpty($machineName))
     echo 'machineName invalid and/or no running docker machine'
     exit
 }
+echo "Machine Name : " $machineName
 ### docker 环境变量
 ### 使用 docker-machine 命令生成环境变量并运行，以便于后续的的 docker 命令直接使用，注意此处为了解决中文问题做了转码，
 foreach ($line in (& "C:\Program Files\Docker\Docker\Resources\bin\docker-machine.exe" env $machineName))
