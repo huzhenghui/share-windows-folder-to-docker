@@ -74,12 +74,17 @@ if([string]::IsNullOrEmpty($volumeName))
     ### 卷的名称，使用前缀和散列值区分
     $volumeName = -Join('Share_for_Docker_', $directory_filter_name, '_', $directory_hash)
 }
+echo "Volume Name : " $volumeName
 ## sharePath
 ### 判断是否设置了共享路径参数
 if([string]::IsNullOrEmpty($sharePath))
 {
-    ### 共享文件夹名称，使用前缀和散列值区分
-    $sharePath = -Join('Share_for_Docker_', $directory_filter_name, '_', $directory_hash)
+    ### 共享文件夹名称增加 Share_for Docker_ 前缀，以便于未来管理
+    $sharePath = -Join('Share_for_Docker_', $directory_filter_name)
+    ### 由于 Windows 共享文件夹名称最长 80 字符，为了后面的散列值，按照 47 个字符截断
+    if ($sharePath.Length -gt 47) {$sharePath = $sharePath.Substring(0, 47)}
+    ### 共享文件夹名称增加散列值作为后缀
+    $sharePath = -Join($sharePath, '_', $directory_hash)
 }
 echo "Share Path : " $sharePath
 ## userName
