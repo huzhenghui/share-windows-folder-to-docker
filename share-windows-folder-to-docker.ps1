@@ -178,7 +178,9 @@ $winnt_localhost = [ADSI]"WinNT://localhost"
 $new_user = $winnt_localhost.create("user", $userName)
 ## 设置密码
 $new_user.setpassword($password)
-## 设置信息，用户只有设置信息后才会创建，因此没有参数也要调用
+## 设置用户描述信息，便于从“计算机管理”中清理不需要的用户
+$new_user.Put('Description', -Join('Share ', $workingDir, ' as ', $sharePath,' for Docker volume ', $volumeName, ' on ', $machineName))
+## 保存用户 
 $new_user.setinfo()
 ## 设置这个账户的密码永远不过期
 Get-WmiObject -Class Win32_UserAccount -Filter "name = '${username}'" | Set-WmiInstance -Argument @{PasswordExpires = 0}
