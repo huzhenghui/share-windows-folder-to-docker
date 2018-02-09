@@ -223,7 +223,7 @@ $sd.owner = $Trustee
 ## 获得共享对象
 $Share = [WMICLASS]"WIN32_Share"
 ## 为当前文件夹创建共享文件夹
-$Share.Create($workingDir, $sharePath, 0, $Null, "Share for Docker", "", $sd)
+$Share.Create($workingDir, $sharePath, 0, $Null, -Join('Share by ', $userName, ' as ', $sharePath,' for Docker volume ', $volumeName, ' on ', $machineName), "", $sd)
 # 在虚拟机中运行脚本获取 Host Windows 的IP地址
 ## 此处欢迎集思广益：这种获取IP的方法不是很优雅，比较hack。先获取tty，然后切掉前面的/dev/，使用虚拟机上的w命令，按照tty过滤，最后输出第三个字段
 $local_ip = $(docker-machine ssh $machineName 'tty=$(tty | cut -c 6-); w -i | grep $tty | awk ''{print $3;}''')
