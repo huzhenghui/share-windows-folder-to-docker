@@ -20,6 +20,11 @@
 ## -userName 共享的文件夹的用户，如果不提供，则自动生成，该参数自动传入 Docker 主机，使用时并不涉及
 ## -password 共享的文件夹的用户的密码，如果不提供，则自动生成，该参数自动传入 Docker 主机，使用时并不涉及
 ## -replaceVolume 当 Docker 主机上包含同名的卷的名称时，替换已有设置，否则退出
+## -optUid 用于 docker volume create --opt o=uid= 的值
+## -optGid 用于 docker volume create --opt o=gid= 的值
+## -optFileMode 用于 docker volume create --opt o=file_mode= 的值
+## -optDirMode 用于 docker volume create --opt o=dir_mode= 的值
+## -optCache 用于 docker volume create --opt o=cache= 的值
 Param(
     [string]$workingDir,
     [string]$machineName,
@@ -27,7 +32,12 @@ Param(
     [string]$sharePath,
     [string]$userName,
     [string]$password,
-    [switch]$replaceVolume
+    [switch]$replaceVolume,
+    [string]$optUid,
+    [string]$optGid,
+    [string]$optFileMode,
+    [string]$optDirMode,
+    [string]$optCache
 )
 # 常量
 ## 安全字符
@@ -229,12 +239,42 @@ $Share.Create($workingDir, $sharePath, 0, $Null, -Join('Share by ', $userName, '
 $local_ip = $(docker-machine ssh $machineName 'tty=$(tty | cut -c 6-); w -i | grep $tty | awk ''{print $3;}''')
 echo "Local IP : " $local_ip
 # 加载共享文件夹
-docker volume create --driver local --opt type=cifs --opt device=//${local_ip}/${sharePath} --opt o=username=${userName},password=${password} --name ${volumeName}
+$optO = -Join('username=', $userName, ',password=', $password)
+if(-Not [string]::IsNullOrEmpty($optUid))
+{
+    $optO = -Join($optO, ',uid=', $optUid)
+}
+if(-Not [string]::IsNullOrEmpty($optGid))
+{
+    $optO = -Join($optO, ',gid=', $optGid)
+}
+if(-Not [string]::IsNullOrEmpty($optFileMode))
+{
+    $optO = -Join($optO, ',file_mode=', $optFileMode)
+}
+if(-Not [string]::IsNullOrEmpty($optDirMode))
+{
+    $optO = -Join($optO, ',dir_mode=', $optDirMode)
+}
+if(-Not [string]::IsNullOrEmpty($optCache))
+{
+    $optO = -Join($optO, ',cache=', $optCache)
+}
+docker volume create --driver local --opt type=cifs --opt device=//${local_ip}/${sharePath} --opt o=${optO} --name ${volumeName}
 #演示命令
+echo ""
 echo 'demo:'
+echo ""
 ## 这个命令在共享文件夹中随机创建一个文件
-echo "docker run --rm -v ${volumeName}:/share alpine touch (get-date -Format '/\s\h\are/yyyy-MM-dd-HH-mm-ss-fffffff.\tx\t')"
+echo "docker run --rm -v ${volumeName}:/${volumeName} alpine touch (-Join('/${volumeName}/', (get-date -Format 'yyyy-MM-dd-HH-mm-ss-fffffff'), '.txt'))"
 ## 这个命令列出共享文件夹，可以查询到刚才创建的文件
-echo "docker run --rm -v ${volumeName}:/share alpine ls /share"
+echo "docker run --rm -v ${volumeName}:/${volumeName} alpine ls /${volumeName}"
+## 这个命令查询卷信息
+echo "docker volume inspect ${volumeName}"
 echo ""
 echo "WARNING : '...input/output error' is a known error. This may occur with mobile storage devices"
+## 这个命令删除卷
+echo ""
+echo "delete: CAUTION: You must delete windows' share folder and windows' user manually"
+echo ""
+echo "docker volume rm ${volumeName}"
