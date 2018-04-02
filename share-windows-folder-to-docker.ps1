@@ -151,7 +151,7 @@ foreach ($line in (& "C:\Program Files\Docker\Docker\Resources\bin\docker-machin
 }
 ## volumeName
 ### 判断是否存在名称为 volumeName 的卷
-if((docker volume ls --filter "Name=${volumeName}" --format '{{.Name}}') -ne $Null)
+if(@(docker volume ls --format '{{.Name}}').Contains(${volumeName}))
 {
     echo 'Volume Name exist : ' $volumeName
     if($replaceVolume.IsPresent)
