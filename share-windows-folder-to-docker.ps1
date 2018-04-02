@@ -239,6 +239,7 @@ $Share.Create($workingDir, $sharePath, 0, $Null, -Join('Share by ', $userName, '
 $local_ip = $(docker-machine ssh $machineName 'tty=$(tty | cut -c 6-); w -i | grep $tty | awk ''{print $3;}''')
 echo "Local IP : " $local_ip
 # 加载共享文件夹
+## https://linux.die.net/man/8/mount.cifs
 $optO = -Join('username=', $userName, ',password=', $password)
 if(-Not [string]::IsNullOrEmpty($optUid))
 {
