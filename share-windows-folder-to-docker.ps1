@@ -264,24 +264,30 @@ if(-Not [string]::IsNullOrEmpty($optCache))
 docker volume create --driver local --opt type=cifs --opt device=//${local_ip}/${sharePath} --opt o=${optO} --name ${volumeName}
 # 输出环境变量
 -Join('# share-windows-folder-to-docker Environment Variable') | Out-File -FilePath .\share-windows-folder-to-docker.env
+-Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_HASH = "', $directory_hash, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
+-Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_FILTER_NAME = "', $directory_filter_name, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
 -Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_VOLUMENAME = "', $volumeName, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
 # 演示命令
-echo ""
-echo 'demo:'
-echo ""
+Write-Output ""
+Write-Output 'demo:'
+Write-Output ""
 ## 这个命令在共享文件夹中随机创建一个文件
-echo "docker run --rm -v ${volumeName}:/${volumeName} alpine touch (-Join('/${volumeName}/', (get-date -Format 'yyyy-MM-dd-HH-mm-ss-fffffff'), '.txt'))"
+Write-Output "docker run --rm -v ${volumeName}:/${volumeName} alpine touch (-Join('/${volumeName}/', (get-date -Format 'yyyy-MM-dd-HH-mm-ss-fffffff'), '.txt'))"
 ## 这个命令列出共享文件夹，可以查询到刚才创建的文件
-echo "docker run --rm -v ${volumeName}:/${volumeName} alpine ls /${volumeName}"
+Write-Output "docker run --rm -v ${volumeName}:/${volumeName} alpine ls /${volumeName}"
 ## 这个命令查询卷信息
-echo "docker volume inspect ${volumeName}"
+Write-Output "docker volume inspect ${volumeName}"
+Write-Output ""
+Write-Output "WARNING : '...input/output error' is a known error. This may occur with mobile storage devices"
 ## 这个命令把生成的信息读入环境变量
-echo "Get-Content .\share-windows-folder-to-docker.env | Invoke-Expression"
-echo ""
-echo "WARNING : '...input/output error' is a known error. This may occur with mobile storage devices"
+Write-Output ""
+Write-Output "Run this command to configure your shell:"
+Write-Output ""
+Write-Output "Get-Content .\share-windows-folder-to-docker.env | Invoke-Expression"
+Write-Output ""
 ## 这个命令删除卷
-echo ""
-echo "delete: CAUTION: You must delete windows' share folder and windows' user manually"
-echo ""
-echo "docker volume rm ${volumeName}"
+Write-Output ""
+Write-Output "delete: CAUTION: You must delete windows' share folder and windows' user manually"
+Write-Output ""
+Write-Output "docker volume rm ${volumeName}"
 
