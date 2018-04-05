@@ -262,7 +262,10 @@ if(-Not [string]::IsNullOrEmpty($optCache))
     $optO = -Join($optO, ',cache=', $optCache)
 }
 docker volume create --driver local --opt type=cifs --opt device=//${local_ip}/${sharePath} --opt o=${optO} --name ${volumeName}
-#演示命令
+# 输出环境变量
+-Join('# share-windows-folder-to-docker Environment Variable') | Out-File -FilePath .\share-windows-folder-to-docker.env
+-Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_VOLUMENAME = "', $volumeName, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
+# 演示命令
 echo ""
 echo 'demo:'
 echo ""
@@ -272,6 +275,8 @@ echo "docker run --rm -v ${volumeName}:/${volumeName} alpine touch (-Join('/${vo
 echo "docker run --rm -v ${volumeName}:/${volumeName} alpine ls /${volumeName}"
 ## 这个命令查询卷信息
 echo "docker volume inspect ${volumeName}"
+## 这个命令把生成的信息读入环境变量
+echo "Get-Content .\share-windows-folder-to-docker.env | Invoke-Expression"
 echo ""
 echo "WARNING : '...input/output error' is a known error. This may occur with mobile storage devices"
 ## 这个命令删除卷
@@ -279,3 +284,4 @@ echo ""
 echo "delete: CAUTION: You must delete windows' share folder and windows' user manually"
 echo ""
 echo "docker volume rm ${volumeName}"
+
