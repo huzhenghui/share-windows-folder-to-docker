@@ -67,18 +67,18 @@ else
         $workingDir = [System.IO.Path]::GetDirectoryName($workingDir)
     }
 }
-echo "Working Directory : " $workingDir
+Write-Output "Working Directory : " $workingDir
 ### 获取路径的最后一段，也就是文件夹名，由于后面会多次使用该文件夹名，避免出现字符集问题建议使用纯英文，或者手工设置
 $directory_name = [System.IO.Path]::GetFileName($workingDir)
-echo "Directory Name : " $directory_name
+Write-Output "Directory Name : " $directory_name
 ### 为了避免文件夹名重复，通过计算路径的散列值区分
 ### 把字符串转换成内存中的流计算散列值，从这里也可以看出 PowerShell 实现的合理性，因为 PowerShell 中的字符串是字符，而散列值需要按照字节计算，因此需要按照字符集转换，此处使用 MD5 算法
 $directory_hash = Get-FileHash -Algorithm MD5 -InputStream ([System.IO.MemoryStream]::new((new-object -TypeName System.Text.UTF8Encoding).GetBytes($workingDir))) | Select-Object -ExpandProperty Hash
-echo "Directory Hash : " $directory_hash
+Write-Output "Directory Hash : " $directory_hash
 ### 为了避免路径中的非ASCII字符，对文件夹名进行过滤
 $directory_filter_name = ""
 foreach($c in $directory_name.ToCharArray()) {if ($safe_charactors.Contains($c)) {$directory_filter_name += $c}}
-echo "Directory Filter Name : " $directory_filter_name
+Write-Output "Directory Filter Name : " $directory_filter_name
 ## volumeName
 ### 判断是否设置了卷参数
 if([string]::IsNullOrEmpty($volumeName))
@@ -86,7 +86,7 @@ if([string]::IsNullOrEmpty($volumeName))
     ### 卷的名称，使用前缀和散列值区分
     $volumeName = -Join('Share_for_Docker_', $directory_filter_name, '_', $directory_hash)
 }
-echo "Volume Name : " $volumeName
+Write-Output "Volume Name : " $volumeName
 ## sharePath
 ### 判断是否设置了共享路径参数
 if([string]::IsNullOrEmpty($sharePath))
@@ -98,7 +98,7 @@ if([string]::IsNullOrEmpty($sharePath))
     ### 共享文件夹名称增加散列值作为后缀
     $sharePath = -Join($sharePath, '_', $directory_hash)
 }
-echo "Share Path : " $sharePath
+Write-Output "Share Path : " $sharePath
 ## userName
 ### 判断是否设置了用户名参数
 if([string]::IsNullOrEmpty($userName))
@@ -112,7 +112,7 @@ if([string]::IsNullOrEmpty($userName))
     ### 由于 Windows 用户的用户名最长 20 字符，按照 20 个字符截断
     if ($userName.Length -gt 20) {$userName = $userName.Substring(0, 20)}
 }
-echo "User Name :" $userName
+Write-Output "User Name :" $userName
 ## password
 ### 判断是否设置了密码参数
 if([string]::IsNullOrEmpty($password))
@@ -120,7 +120,7 @@ if([string]::IsNullOrEmpty($password))
     ### 密码使用随机自动生成
     for($password = $Null ; $password.length -le 32; $password += "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray() | Get-Random){}
 }
-echo "Password Generated"
+Write-Output "Password Generated"
 # 判断参数
 ## machineName
 ### 判断是否设置了 machineName 参数
@@ -141,10 +141,10 @@ if([string]::IsNullOrEmpty($machineName))
 ### 判断是否设置了 machineName 参数
 if([string]::IsNullOrEmpty($machineName))
 {
-    echo 'machineName invalid and/or no running docker machine'
+    Write-Output 'machineName invalid and/or no running docker machine'
     exit
 }
-echo "Machine Name : " $machineName
+Write-Output "Machine Name : " $machineName
 ### docker 环境变量
 ### 使用 docker-machine 命令生成环境变量并运行，以便于后续的的 docker 命令直接使用，注意此处为了解决中文问题做了转码，
 foreach ($line in (& "C:\Program Files\Docker\Docker\Resources\bin\docker-machine.exe" env $machineName))
@@ -155,12 +155,12 @@ foreach ($line in (& "C:\Program Files\Docker\Docker\Resources\bin\docker-machin
 ### 判断是否存在名称为 volumeName 的卷
 if(@(docker volume ls --format '{{.Name}}').Contains(${volumeName}))
 {
-    echo 'Volume Name exist : ' $volumeName
+    Write-Output 'Volume Name exist : ' $volumeName
     if($replaceVolume.IsPresent)
     {
-        echo 'Remove Existence volume'
+        Write-Output 'Remove Existence volume'
         docker volume rm --force ${volumeName}
-        echo 'Existence volume removed'
+        Write-Output 'Existence volume removed'
     }
     else
     {
@@ -173,7 +173,7 @@ if(@(docker volume ls --format '{{.Name}}').Contains(${volumeName}))
 if((Get-WmiObject -Class Win32_Share -Filter "name = '$sharePath'") -ne $Null)
 {
     ### 共享路径存在的时候退出，由人工处理
-    echo "Share path exist : " $sharePath
+    Write-Output "Share path exist : " $sharePath
     exit
 }
 ## userName
@@ -181,7 +181,7 @@ if((Get-WmiObject -Class Win32_Share -Filter "name = '$sharePath'") -ne $Null)
 if((Get-WmiObject -Class Win32_UserAccount -Filter "name = '${userName}'") -ne $Null)
 {
     ### 用户存在的时候退出，由人工处理
-    echo "User Exist : " $userName
+    Write-Output "User Exist : " $userName
     exit
 }
 # 创建用户
@@ -239,7 +239,7 @@ $Share.Create($workingDir, $sharePath, 0, $Null, -Join('Share by ', $userName, '
 # 在虚拟机中运行脚本获取 Host Windows 的IP地址
 ## 此处欢迎集思广益：这种获取IP的方法不是很优雅，比较hack。先获取tty，然后切掉前面的/dev/，使用虚拟机上的w命令，按照tty过滤，最后输出第三个字段
 $local_ip = $(docker-machine ssh $machineName 'tty=$(tty | cut -c 6-); w -i | grep $tty | awk ''{print $3;}''')
-echo "Local IP : " $local_ip
+Write-Output "Local IP : " $local_ip
 # 加载共享文件夹
 ## https://linux.die.net/man/8/mount.cifs
 $optO = -Join('username=', $userName, ',password=', $password)
