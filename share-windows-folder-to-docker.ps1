@@ -20,6 +20,7 @@
 ## -userName 共享的文件夹的用户，如果不提供，则自动生成，该参数自动传入 Docker 主机，使用时并不涉及
 ## -password 共享的文件夹的用户的密码，如果不提供，则自动生成，该参数自动传入 Docker 主机，使用时并不涉及
 ## -replaceVolume 当 Docker 主机上包含同名的卷的名称时，替换已有设置，否则退出
+## -outputEnvFile 把运行过程中的变量值保存在 .env 文件中
 ## -optUid 用于 docker volume create --opt o=uid= 的值
 ## -optGid 用于 docker volume create --opt o=gid= 的值
 ## -optFileMode 用于 docker volume create --opt o=file_mode= 的值
@@ -33,6 +34,7 @@ Param(
     [string]$userName,
     [string]$password,
     [switch]$replaceVolume,
+    [string]$outputEnvFile,
     [string]$optUid,
     [string]$optGid,
     [string]$optFileMode,
@@ -263,10 +265,13 @@ if(-Not [string]::IsNullOrEmpty($optCache))
 }
 docker volume create --driver local --opt type=cifs --opt device=//${local_ip}/${sharePath} --opt o=${optO} --name ${volumeName}
 # 输出环境变量
--Join('# share-windows-folder-to-docker Environment Variable') | Out-File -FilePath .\share-windows-folder-to-docker.env
--Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_HASH = "', $directory_hash, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
--Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_FILTER_NAME = "', $directory_filter_name, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
--Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_VOLUMENAME = "', $volumeName, '"') | Out-File -FilePath .\share-windows-folder-to-docker.env -Append
+if(-not [string]::IsNullOrEmpty($outputEnvFile))
+{
+    -Join('# share-windows-folder-to-docker Environment Variable') | Out-File -FilePath $outputEnvFile
+    -Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_HASH = "', $directory_hash, '"') | Out-File -FilePath $outputEnvFile -Append
+    -Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_DIRECTORY_FILTER_NAME = "', $directory_filter_name, '"') | Out-File -FilePath $outputEnvFile -Append
+    -Join('$Env:SHARE_WINDOWS_FOLDER_TO_DOCKER_VOLUMENAME = "', $volumeName, '"') | Out-File -FilePath $outputEnvFile -Append
+}
 # 演示命令
 Write-Output ""
 Write-Output 'demo:'
@@ -274,17 +279,19 @@ Write-Output ""
 ## 这个命令在共享文件夹中随机创建一个文件
 Write-Output "docker run --rm -v ${volumeName}:/${volumeName} alpine touch (-Join('/${volumeName}/', (get-date -Format 'yyyy-MM-dd-HH-mm-ss-fffffff'), '.txt'))"
 ## 这个命令列出共享文件夹，可以查询到刚才创建的文件
-Write-Output "docker run --rm -v ${volumeName}:/${volumeName} alpine ls /${volumeName}"
+Write-Output "docker run --rm -v ${volumeName}:/${volumeName} alpine ls -al /${volumeName}"
 ## 这个命令查询卷信息
 Write-Output "docker volume inspect ${volumeName}"
 Write-Output ""
 Write-Output "WARNING : '...input/output error' is a known error. This may occur with mobile storage devices"
 ## 这个命令把生成的信息读入环境变量
-Write-Output ""
-Write-Output "Run this command to configure your shell:"
-Write-Output ""
-Write-Output "Get-Content .\share-windows-folder-to-docker.env | Invoke-Expression"
-Write-Output ""
+if(-not [string]::IsNullOrEmpty($outputEnvFile))
+{
+    Write-Output ""
+    Write-Output "Run this command to configure your shell:"
+    Write-Output ""
+    Write-Output "Get-Content ${outputEnvFile} | Invoke-Expression"
+}
 ## 这个命令删除卷
 Write-Output ""
 Write-Output "delete: CAUTION: You must delete windows' share folder and windows' user manually"
